@@ -1,0 +1,30 @@
+# 1. PERMITIR ACCESO GLOBAL (CORS)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, DELETE, PUT"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+</IfModule>
+
+# 2. CONFIGURACIÓN DE RUTAS LARAVEL
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    Options +FollowSymLinks
+    RewriteEngine On
+
+    # Asegurar que las imágenes tengan permiso de acceso
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|ico)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirigir a index.php si el archivo no existe
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
