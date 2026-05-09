@@ -8,7 +8,12 @@ use App\Http\Controllers\API\ProductoController;
 use App\Http\Controllers\API\TiendaAprobacionController;
 use App\Http\Controllers\API\ProductoAprobacionController;
 use App\Http\Controllers\API\ApiClienteController;
-
+use App\Http\Controllers\API\PedidoController;
+use App\Http\Controllers\API\VendedorPedidoController;
+use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\HorarioController;
+use App\Http\Controllers\API\ReporteController;
+use App\Http\Controllers\API\ReporteAdminController;
 /*
 |--------------------------------------------------------------------------
 | API Routes - Saborytec (Versión Protegida Universitaria)
@@ -43,13 +48,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tiendas', [ApiClienteController::class, 'getTiendas']);
         Route::get('productos/destacados', [ApiClienteController::class, 'getProductosDestacados']);
         Route::get('/explorar', [ApiClienteController::class, 'explorar']);
+        
         Route::get('/filtros-data', [ApiClienteController::class, 'getFiltrosData']);
+
         Route::post('/carrito/agregar', [ApiClienteController::class, 'agregarAlCarrito']);
         
-    Route::get('/carrito/ver', [ApiClienteController::class, 'verCarritos']);
-    Route::delete('/carrito/eliminar/{id}', [ApiClienteController::class, 'eliminar']);
-    // api.php
-    Route::put('/carrito/actualizar/{id}', [ApiClienteController::class, 'update']);
+        Route::get('/carrito/ver', [ApiClienteController::class, 'verCarritos']);
+        Route::delete('/carrito/eliminar/{id}', [ApiClienteController::class, 'eliminar']);
+        Route::put('/carrito/actualizar/{id}', [ApiClienteController::class, 'update']);
+
+        // --- NUEVAS RUTAS DE PEDIDOS (cliente) ---
+        Route::post('/pedidos/confirmar', [PedidoController::class, 'store']);
+        Route::get('/pedidos/mis-pedidos', [PedidoController::class, 'misPedidos']);
+        Route::post('/pedidos/crear', [PedidoController::class, 'store']);
+        Route::get('/pedidos/ver', [PedidoController::class, 'misPedidos']);
+
+        // RUTAS CHAT (cliente):
+        Route::get('/pedidos/{id}/mensajes', [ChatController::class, 'index']);
+        Route::post('/pedidos/mensajes', [ChatController::class, 'store']);
     });
 
     // --- GESTIÓN DE USUARIOS (ADMIN) ---
@@ -72,7 +88,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('categorias', [ProductoController::class, 'getCategorias']);
     Route::get('vendedor/tienda', [TiendaController::class, 'index']); 
     Route::post('productos/{id}/disponibilidad', [ProductoController::class, 'toggleDisponibilidad']);
+
     Route::apiResource('productos', ProductoController::class);
+
+    // --- NUEVAS RUTAS DE GESTIÓN DE PEDIDOS (vendedor) ---
+    Route::prefix('vendedor/pedidos')->group(function () {
+        Route::get('/', [VendedorPedidoController::class, 'index']);          // Ver lista de pedidos
+        Route::get('/{id}', [VendedorPedidoController::class, 'show']);       // Ver detalle (productos)  
+        Route::post('/{id}/estado', [VendedorPedidoController::class, 'updateEstado']);     // Cambiar a 'preparación', etc.
+        Route::post('/{id}/cancelar', [VendedorPedidoController::class, 'cancelar']);   
+            // Cancelar con motivo
+        Route::post('/{id}/mensajes', [ChatController::class, 'storeVendedor']);
+       
+    });
+
+     Route::get('/chat/{id_pedido}', [ChatController::class, 'index']);
 
     // --- ADMINISTRACIÓN DE PRODUCTOS (APROBACIONES) ---
     Route::prefix('admin/productos')->group(function () {
@@ -80,4 +110,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{id}/aprobar', [ProductoAprobacionController::class, 'aprobar']);
         Route::post('{id}/rechazar', [ProductoAprobacionController::class, 'rechazar']);
     });
+
+    // Rutas para Horarios
+    Route::get('horarios/vendedor/mis-horarios', [HorarioController::class, 'index']);
+    Route::put('horarios/{id}', [HorarioController::class, 'update']);
+    Route::post('horarios', [HorarioController::class, 'store']);
+    Route::delete('horarios/{id}', [HorarioController::class, 'destroy']);
+
+    // Reportes Saborytec 
+    Route::get('reportes/vendedor', [ReporteController::class, 'reporteVendedor']);
+    Route::get('reportes/admin/general', [ReporteAdminController::class, 'obtenerMetricasGlobales']);
 });

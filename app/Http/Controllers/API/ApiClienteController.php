@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Carrito; 
+use App\Models\Carrito;
 use Exception;
 
 class ApiClienteController extends Controller
@@ -14,46 +14,46 @@ class ApiClienteController extends Controller
     /**
      * Retorna las tiendas para la sección de inicio.
      */
-public function getTiendas()
-{
-    try {
-        if (!Schema::hasTable('tiendas')) {
-            return response()->json(['error' => 'La tabla tiendas no existe en la BD'], 500);
+    public function getTiendas()
+    {
+        try {
+            if (!Schema::hasTable('tiendas')) {
+                return response()->json(['error' => 'La tabla tiendas no existe en la BD'], 500);
+            }
+
+            $tiendas = DB::table('tiendas')
+                ->select(
+                    'ID_tienda',
+                    'nombre',
+                    'descripcion',
+                    'logo',
+                    'estado',
+                    'ID_usuario_vendedor',
+                    'visible',
+                    'facebook',
+                    'instagram',
+                    'whatsapp',
+                    'tiktok',
+                    'portada',
+                    'clabe',
+                    'banco',
+                    'titular_cuenta',
+                    'aprobacion'
+                )
+                ->where('aprobacion', '=', 'aprobada')
+                ->where('visible', '=', 1)
+                ->where('estado', '=', 'activo')
+                ->get();
+
+            return response()->json($tiendas, 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Fallo en el servidor',
+                'mensaje' => $e->getMessage()
+            ], 500);
         }
-
-        $tiendas = DB::table('tiendas')
-            ->select(
-                'ID_tienda',
-                'nombre',
-                'descripcion',
-                'logo',
-                'estado',
-                'ID_usuario_vendedor',
-                'visible',
-                'facebook',
-                'instagram',
-                'whatsapp',
-                'tiktok',
-                'portada',
-                'clabe',
-                'banco',
-                'titular_cuenta',
-                'aprobacion'
-            )
-            ->where('aprobacion', '=', 'aprobada') 
-            ->where('visible', '=', 1)
-            ->where('estado', '=', 'activo')
-            ->get();
-
-        return response()->json($tiendas, 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Fallo en el servidor',
-            'mensaje' => $e->getMessage()
-        ], 500);
     }
-}
 
     /**
      * Retorna los productos destacados (últimos 4 aceptados).
@@ -67,11 +67,13 @@ public function getTiendas()
                 ->select(
                     'productos.*',
                     'categorias.nombre as nombre_categoria',
-                    'tiendas.nombre as nombre_tienda'
+                    'tiendas.nombre as nombre_tienda',
+                    'productos.imagen',
                 )
                 // Solo productos aceptados por el admin
                 ->where('productos.estado', '!=', 'pendiente')
                 ->where('productos.visible', '=', 1)
+                ->where('productos.disponible', '=', 1)
                 ->orderBy('productos.ID_producto', 'desc')
                 ->limit(4)
                 ->get();
@@ -93,13 +95,14 @@ public function getTiendas()
                 ->join('categorias', 'productos.ID_categoria', '=', 'categorias.ID_categoria')
                 ->where('productos.estado', '!=', 'pendiente')
                 ->where('productos.visible', '=', 1)
+                ->where('productos.disponible', '=', 1) // <--- ¡AGREGA ESTA LÍNEA!
                 ->whereIn('tiendas.aprobacion', ['aprobado', 'aprobada', 'Aprobado', 'Aprobada']);
 
             // Filtros Dinámicos
             if ($request->filled('buscar')) {
-                $query->where(function($q) use ($request) {
+                $query->where(function ($q) use ($request) {
                     $q->where('productos.nombre', 'like', '%' . $request->buscar . '%')
-                      ->orWhere('productos.marca', 'like', '%' . $request->buscar . '%');
+                        ->orWhere('productos.marca', 'like', '%' . $request->buscar . '%');
                 });
             }
 
@@ -111,6 +114,16 @@ public function getTiendas()
                 $query->where('productos.ID_tienda', '=', $request->tienda);
             }
 
+            // --- AQUÍ ESTÁ EL TRUCO PARA EL PRECIO ---
+            if ($request->filled('precio_max')) {
+                // Convertimos a float para asegurar que la DB lo entienda como número
+                $query->where('productos.precio', '<=', (float) $request->precio_max);
+            }
+
+            // Filtro por Disponibilidad (el nuevo que agregamos)
+            if ($request->has('disponible') && $request->disponible !== null && $request->disponible !== '') {
+                $query->where('productos.disponible', (int) $request->disponible);
+            }
             $productos = $query->select(
                 'productos.ID_producto',
                 'productos.nombre',
@@ -121,8 +134,8 @@ public function getTiendas()
                 'categorias.nombre as nombre_categoria',
                 'tiendas.nombre as nombre_tienda'
             )
-            ->orderBy('productos.ID_producto', 'desc')
-            ->get();
+                ->orderBy('productos.ID_producto', 'desc')
+                ->get();
 
             return response()->json($productos, 200);
 
@@ -138,7 +151,7 @@ public function getTiendas()
     {
         try {
             $categorias = DB::table('categorias')->select('ID_categoria', 'nombre')->get();
-            
+
             $tiendas = DB::table('tiendas')
                 ->whereIn('aprobacion', ['aprobado', 'aprobada', 'Aprobado', 'Aprobada'])
                 ->where('visible', 1)
@@ -185,20 +198,20 @@ public function getTiendas()
                 DB::table('carrito')
                     ->where('ID_carrito', $itemExistente->ID_carrito)
                     ->increment('cantidad', $cantidad);
-                    
+
                 return response()->json(['message' => 'Cantidad actualizada'], 200);
             } else {
                 // Si es nuevo, lo insertamos con el ID_tienda del producto
                 // Aquí es donde nace la separación por tiendas
                 DB::table('carrito')->insert([
-                    'ID_usuario'  => $user->ID_usuario,
+                    'ID_usuario' => $user->ID_usuario,
                     'ID_producto' => $productoId,
-                    'ID_tienda'   => $producto->ID_tienda, 
-                    'cantidad'    => $cantidad,
-                    'created_at'  => now(),
-                    'updated_at'  => now()
+                    'ID_tienda' => $producto->ID_tienda,
+                    'cantidad' => $cantidad,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ]);
-                
+
                 return response()->json(['message' => 'Añadido al carrito con éxito'], 201);
             }
 
@@ -211,60 +224,61 @@ public function getTiendas()
     }
 
     public function verCarritos(Request $request)
-{
-    try {
-        $carrito = DB::table('carrito')
-            ->join('productos', 'carrito.ID_producto', '=', 'productos.ID_producto')
-            ->join('tiendas', 'carrito.ID_tienda', '=', 'tiendas.ID_tienda')
-            ->where('carrito.ID_usuario', $request->user()->ID_usuario)
-            // En ApiClienteController.php, dentro de verCarritos:
-            ->select(
-                'carrito.ID_carrito',
-                'carrito.ID_tienda',
-                'carrito.cantidad',
-                'productos.nombre as nombre_producto', 
-                'productos.precio',
-                // Esto construye la URL completa hacia tu backend
-                DB::raw("CONCAT('http://saborytecapi.test/storage/productos/', productos.imagen) as imagen"),
-                'tiendas.nombre as nombre_tienda' 
-            )
-            ->get();
+    {
+        try {
+            $carrito = DB::table('carrito')
+                ->join('productos', 'carrito.ID_producto', '=', 'productos.ID_producto')
+                ->join('tiendas', 'carrito.ID_tienda', '=', 'tiendas.ID_tienda')
+                ->where('carrito.ID_usuario', $request->user()->ID_usuario)
+                ->where('productos.disponible', '=', 1)
+                // En ApiClienteController.php, dentro de verCarritos:
+                ->select(
+                    'carrito.ID_carrito',
+                    'carrito.ID_tienda',
+                    'carrito.cantidad',
+                    'productos.nombre as nombre_producto',
+                    'productos.precio',
+                    'productos.imagen',
+                    'tiendas.nombre as nombre_tienda'
+                )
+                ->get();
 
-        return response()->json($carrito);
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json($carrito);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-}
-    public function update(Request $request, $id) {
-    $item = Carrito::find($id);
-    
-    if (!$item) {
-        return response()->json(['error' => 'No encontrado'], 404);
-    }
+    public function update(Request $request, $id)
+    {
+        $item = Carrito::find($id);
 
-    $item->cantidad = $request->cantidad;
-    $item->save();
-
-    return response()->json(['message' => 'Cantidad actualizada', 'item' => $item]);
-}
-
-public function eliminar($id) 
-{
-    try {
-        // Buscamos y borramos usando el nombre real de tu columna: ID_carrito
-        $deleted = DB::table('carrito')->where('ID_carrito', $id)->delete();
-
-        if ($deleted) {
-            return response()->json(['message' => 'Eliminado'], 200);
-        } else {
-            return response()->json(['message' => 'No encontrado o ya eliminado'], 404);
+        if (!$item) {
+            return response()->json(['error' => 'No encontrado'], 404);
         }
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Error al eliminar',
-            'detalle' => $e->getMessage()
-        ], 500);
+        $item->cantidad = $request->cantidad;
+        $item->save();
+
+        return response()->json(['message' => 'Cantidad actualizada', 'item' => $item]);
     }
-}
+
+    public function eliminar($id)
+    {
+        try {
+            // Buscamos y borramos usando el nombre real de tu columna: ID_carrito
+            $deleted = DB::table('carrito')->where('ID_carrito', $id)->delete();
+
+            if ($deleted) {
+                return response()->json(['message' => 'Eliminado'], 200);
+            } else {
+                return response()->json(['message' => 'No encontrado o ya eliminado'], 404);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al eliminar',
+                'detalle' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -27,4 +27,10 @@ class Tienda extends Model
         'titular_cuenta',
         'aprobacion'
     ];
+
+    public function horarios()
+{
+    return $this->hasMany(Horario::class, 'ID_tienda', 'ID_tienda');
 }
+}
+
