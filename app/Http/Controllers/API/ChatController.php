@@ -92,7 +92,7 @@ public function store(Request $request)
     /**
      * Guardar mensaje enviado por el VENDEDOR
      */
-    public function storeVendedor(Request $request, $id_pedido)
+    public function storeVendedor(Request $request, int $id_pedido)
     {
         $request->validate([
             'mensaje' => 'required|string',

@@ -47,7 +47,7 @@ class ApiClienteController extends Controller
 
             return response()->json($tiendas, 200);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'error' => 'Fallo en el servidor',
                 'mensaje' => $e->getMessage()
@@ -95,7 +95,7 @@ class ApiClienteController extends Controller
                 ->join('categorias', 'productos.ID_categoria', '=', 'categorias.ID_categoria')
                 ->where('productos.estado', '!=', 'pendiente')
                 ->where('productos.visible', '=', 1)
-                ->where('productos.disponible', '=', 1) // <--- ¡AGREGA ESTA LÍNEA!
+                ->where('productos.disponible', '=', 1)
                 ->whereIn('tiendas.aprobacion', ['aprobado', 'aprobada', 'Aprobado', 'Aprobada']);
 
             // Filtros Dinámicos
@@ -114,16 +114,15 @@ class ApiClienteController extends Controller
                 $query->where('productos.ID_tienda', '=', $request->tienda);
             }
 
-            // --- AQUÍ ESTÁ EL TRUCO PARA EL PRECIO ---
             if ($request->filled('precio_max')) {
-                // Convertimos a float para asegurar que la DB lo entienda como número
                 $query->where('productos.precio', '<=', (float) $request->precio_max);
             }
 
-            // Filtro por Disponibilidad (el nuevo que agregamos)
+            // Filtro por Disponibilidad
             if ($request->has('disponible') && $request->disponible !== null && $request->disponible !== '') {
                 $query->where('productos.disponible', (int) $request->disponible);
             }
+
             $productos = $query->select(
                 'productos.ID_producto',
                 'productos.nombre',
@@ -173,12 +172,10 @@ class ApiClienteController extends Controller
     public function agregarAlCarrito(Request $request)
     {
         try {
-            $user = $request->user(); // Usuario obtenido por el Token de Sanctum
+            $user = $request->user();
             $productoId = $request->input('ID_producto');
             $cantidad = $request->input('cantidad', 1);
 
-            // 1. Buscamos el producto para jalar su ID_tienda
-            // Esto permite que el registro en el carrito sepa a qué vendedor pertenece
             $producto = DB::table('productos')
                 ->where('ID_producto', $productoId)
                 ->first();
@@ -187,22 +184,18 @@ class ApiClienteController extends Controller
                 return response()->json(['message' => 'Producto no encontrado'], 404);
             }
 
-            // 2. Buscamos si ya existe este producto en el carrito del usuario
             $itemExistente = DB::table('carrito')
                 ->where('ID_usuario', $user->ID_usuario)
                 ->where('ID_producto', $productoId)
                 ->first();
 
             if ($itemExistente) {
-                // Si ya existe, incrementamos la cantidad
                 DB::table('carrito')
                     ->where('ID_carrito', $itemExistente->ID_carrito)
                     ->increment('cantidad', $cantidad);
 
                 return response()->json(['message' => 'Cantidad actualizada'], 200);
             } else {
-                // Si es nuevo, lo insertamos con el ID_tienda del producto
-                // Aquí es donde nace la separación por tiendas
                 DB::table('carrito')->insert([
                     'ID_usuario' => $user->ID_usuario,
                     'ID_producto' => $productoId,
@@ -215,7 +208,7 @@ class ApiClienteController extends Controller
                 return response()->json(['message' => 'Añadido al carrito con éxito'], 201);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'error' => 'Error al guardar en el carrito',
                 'detalle' => $e->getMessage()
@@ -231,7 +224,6 @@ class ApiClienteController extends Controller
                 ->join('tiendas', 'carrito.ID_tienda', '=', 'tiendas.ID_tienda')
                 ->where('carrito.ID_usuario', $request->user()->ID_usuario)
                 ->where('productos.disponible', '=', 1)
-                // En ApiClienteController.php, dentro de verCarritos:
                 ->select(
                     'carrito.ID_carrito',
                     'carrito.ID_tienda',
@@ -239,21 +231,27 @@ class ApiClienteController extends Controller
                     'productos.nombre as nombre_producto',
                     'productos.precio',
                     'productos.imagen',
-                    'tiendas.nombre as nombre_tienda'
+                    'tiendas.nombre as nombre_tienda',
+                    'tiendas.banco',
+                    'tiendas.titular_cuenta',
+                    'tiendas.clabe'
                 )
                 ->get();
 
             return response()->json($carrito);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    public function update(Request $request, $id)
+
+    public function update(Request $request, int $id)
     {
-        $item = Carrito::find($id);
+        $item = Carrito::where('ID_carrito', $id)
+            ->where('ID_usuario', $request->user()->ID_usuario)
+            ->first();
 
         if (!$item) {
-            return response()->json(['error' => 'No encontrado'], 404);
+            return response()->json(['error' => 'No encontrado o no autorizado'], 404);
         }
 
         $item->cantidad = $request->cantidad;
@@ -262,10 +260,9 @@ class ApiClienteController extends Controller
         return response()->json(['message' => 'Cantidad actualizada', 'item' => $item]);
     }
 
-    public function eliminar($id)
+    public function eliminar(int $id)
     {
         try {
-            // Buscamos y borramos usando el nombre real de tu columna: ID_carrito
             $deleted = DB::table('carrito')->where('ID_carrito', $id)->delete();
 
             if ($deleted) {
@@ -274,7 +271,7 @@ class ApiClienteController extends Controller
                 return response()->json(['message' => 'No encontrado o ya eliminado'], 404);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'error' => 'Error al eliminar',
                 'detalle' => $e->getMessage()

@@ -14,6 +14,7 @@ use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\HorarioController;
 use App\Http\Controllers\API\ReporteController;
 use App\Http\Controllers\API\ReporteAdminController;
+use App\Http\Controllers\API\CalificacionController;
 /*
 |--------------------------------------------------------------------------
 | API Routes - Saborytec (Versión Protegida Universitaria)
@@ -48,24 +49,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tiendas', [ApiClienteController::class, 'getTiendas']);
         Route::get('productos/destacados', [ApiClienteController::class, 'getProductosDestacados']);
         Route::get('/explorar', [ApiClienteController::class, 'explorar']);
-        
         Route::get('/filtros-data', [ApiClienteController::class, 'getFiltrosData']);
-
         Route::post('/carrito/agregar', [ApiClienteController::class, 'agregarAlCarrito']);
         
+        // Rutas para ver, eliminar y actualizar el carrito
         Route::get('/carrito/ver', [ApiClienteController::class, 'verCarritos']);
         Route::delete('/carrito/eliminar/{id}', [ApiClienteController::class, 'eliminar']);
         Route::put('/carrito/actualizar/{id}', [ApiClienteController::class, 'update']);
 
-        // --- NUEVAS RUTAS DE PEDIDOS (cliente) ---
+        // --- RUTAS DE PEDIDOS (group cliente) ---
         Route::post('/pedidos/confirmar', [PedidoController::class, 'store']);
+
         Route::get('/pedidos/mis-pedidos', [PedidoController::class, 'misPedidos']);
+
         Route::post('/pedidos/crear', [PedidoController::class, 'store']);
+
         Route::get('/pedidos/ver', [PedidoController::class, 'misPedidos']);
 
-        // RUTAS CHAT (cliente):
+        // RUTAS CHAT (groupcliente):
         Route::get('/pedidos/{id}/mensajes', [ChatController::class, 'index']);
         Route::post('/pedidos/mensajes', [ChatController::class, 'store']);
+        //calificaciones(group cliente)
+        Route::post('/calificaciones', [CalificacionController::class, 'store']);
+         //calificaciones(group cliente)
+        Route::put('/calificaciones/{id_pedido}', [CalificacionController::class, 'update']);
     });
 
     // --- GESTIÓN DE USUARIOS (ADMIN) ---
@@ -120,4 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reportes Saborytec 
     Route::get('reportes/vendedor', [ReporteController::class, 'reporteVendedor']);
     Route::get('reportes/admin/general', [ReporteAdminController::class, 'obtenerMetricasGlobales']);
+    
+    //calificaciones
+    Route::get('/tienda/{id}/calificaciones', [CalificacionController::class, 'index']);
 });

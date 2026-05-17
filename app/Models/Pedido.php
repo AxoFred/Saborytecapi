@@ -47,4 +47,9 @@ class Pedido extends Model
     {
         return $this->belongsTo(Tienda::class, 'ID_tienda', 'ID_tienda');
     }
+
+    public function calificacion()
+    {
+        return $this->hasOne(Calificacion::class, 'ID_pedido', 'ID_pedido');
+    }
 }

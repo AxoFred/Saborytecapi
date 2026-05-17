@@ -17,7 +17,6 @@ class PedidoController extends Controller
     public function store(Request $request)
     {
         // 1. VALIDACIÓN
-        // Nota: Cambiamos a 'id_tienda' para que coincida con el JSON de tu JS
         $request->validate([
             'id_tienda' => 'required|exists:tiendas,ID_tienda',
             'metodo_pago' => 'required|in:efectivo,transferencia',
@@ -104,7 +103,7 @@ class PedidoController extends Controller
     {
         try {
             $pedidos = Pedido::where('ID_usuario', Auth::user()->ID_usuario)
-                ->with('tienda:ID_tienda,nombre') // Asegúrate de tener la relación 'tienda' en el modelo Pedido
+                ->with('tienda:ID_tienda,nombre', 'calificacion') // Asegúrate de tener la relación 'tienda' en el modelo Pedido
                 ->orderBy('created_at', 'desc')
                 ->get();
 
