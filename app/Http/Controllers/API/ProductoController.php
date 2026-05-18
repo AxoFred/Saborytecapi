@@ -90,7 +90,7 @@ class ProductoController extends Controller
 }
 
     // 3. GET /api/productos/{id} (Para ver un producto específico)
-    public function show($id)
+    public function show(int $id)
     {
         $producto = DB::table('productos')->where('ID_producto', $id)->first();
         
@@ -102,7 +102,7 @@ class ProductoController extends Controller
     }
 
     // 4. PUT /api/productos/{id} (Equivale a ActualizarProductos)
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         try {
             $producto = DB::table('productos')
@@ -132,8 +132,11 @@ class ProductoController extends Controller
                 }
                 
                 $file = $request->file('imagen');
-                $nombreArchivo = time() . "_" . $file->getClientOriginalName();
-                $file->storeAs('public/productos', $nombreArchivo);
+
+                $nombreArchivo = time() . '_' . $file->getClientOriginalName();
+
+                $file->storeAs('productos', $nombreArchivo, 'public');
+
                 $data['imagen'] = $nombreArchivo;
             }
 
@@ -156,7 +159,7 @@ class ProductoController extends Controller
     }
 
     // 5. DELETE /api/productos/{id} (Equivale a EliminarProductos)
-    public function destroy($id)
+    public function destroy(int $id)
     {
         try {
             // Borrado lógico (lo hacemos invisible)
@@ -189,7 +192,7 @@ class ProductoController extends Controller
     }
 
     // Método para cambiar disponibilidad (Soluciona el error del Switch)
-    public function toggleDisponibilidad(Request $request, $id)
+    public function toggleDisponibilidad(Request $request, int $id)
     {
         try {
             DB::table('productos')
