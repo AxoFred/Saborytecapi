@@ -6,7 +6,7 @@ return [
     'allowed_methods' => ['*'],
 
     // Cambia el '*' por tu URL exacta del frontend
-    'allowed_origins' => ['http://fronted-saborytec.test'], 
+    'allowed_origins' => ['*'], 
 
     'allowed_origins_patterns' => [],
 
@@ -17,5 +17,5 @@ return [
     'max_age' => 0,
 
     // IMPORTANTE: Cámbialo a true si manejas sesiones o tokens
-    'supports_credentials' => true, 
+    'supports_credentials' => false, 
 ];
