@@ -26,6 +26,10 @@ Route::get('/', function () {
     return response()->json(['status' => 'API Saborytec funcionando correctamente']);
 });
 
+Route::get('/crear-enlace-storage', function () {
+    \Illuminate\Support\Facades\Artisan::call('storage:link');
+    return '¡Enlace simbólico creado con éxito en la nube de Railway!';
+});
 /******************************************************************
  *                        RUTAS PÚBLICAS                          *
  ******************************************************************/
