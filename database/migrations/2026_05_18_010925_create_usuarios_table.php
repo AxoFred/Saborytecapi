@@ -6,24 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up(): void
-{
-    Schema::create('usuarios', function (Blueprint $table) {
-        $table->id('ID_usuario'); // Tu llave primaria personalizada
-        $table->string('nombre');
-        $table->string('Apaterno');
-        $table->string('Amaterno');
-        $table->string('correo')->unique();
-        $table->string('password');
-        $table->string('telefono')->nullable();
-        $table->string('estado')->default('activo');
-        $table->integer('ID_rol');
-        $table->integer('visible')->default(1);
-    });
-}
+    public function up(): void
+    {
+        // Valida si la tabla ya fue inyectada por el archivo .sql
+        if (!Schema::hasTable('usuarios')) {
+            Schema::create('usuarios', function (Blueprint $table) {
+                $table->id('ID_usuario'); // Tu llave primaria personalizada
+                $table->string('nombre');
+                $table->string('Apaterno');
+                $table->string('Amaterno');
+                $table->string('correo')->unique();
+                $table->string('password');
+                $table->string('telefono')->nullable();
+                $table->string('estado')->default('activo');
+                $table->integer('ID_rol');
+                $table->integer('visible')->default(1);
+            });
+        }
+    }
 
-public function down(): void
-{
-    Schema::dropIfExists('usuarios');
-}
+    public function down(): void
+    {
+        Schema::dropIfExists('usuarios');
+    }
 };
