@@ -15,6 +15,7 @@ use App\Http\Controllers\API\HorarioController;
 use App\Http\Controllers\API\ReporteController;
 use App\Http\Controllers\API\ReporteAdminController;
 use App\Http\Controllers\API\CalificacionController;
+use App\Http\Controllers\API\WeatherController;
 /*
 |--------------------------------------------------------------------------
 | API Routes - Saborytec (Versión Protegida Universitaria)
@@ -138,4 +139,6 @@ Route::middleware('auth:sanctum')->group(function () {
     
     //calificaciones
     Route::get('/tienda/{id}/calificaciones', [CalificacionController::class, 'index']);
+
+    Route::get('/weather', [WeatherController::class, 'index']);
 });
