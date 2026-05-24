@@ -93,37 +93,57 @@ public function store(Request $request)
      * Guardar mensaje enviado por el VENDEDOR
      */
     public function storeVendedor(Request $request, int $id_pedido)
-    {
-        $request->validate([
-            'mensaje' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'mensaje' => 'nullable|string',
+        'archivo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        $pedido = Pedido::find($id_pedido);
-
-        // --- VALIDACIÓN DE CIERRE SEGURO ---
-        // Bloqueamos si el vendedor intenta escribir después de haber marcado como entregado
-        if (in_array($pedido->estado, ['entregado', 'finalizado', 'cancelado'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Chat finalizado. No puedes enviar más mensajes.'
-            ], 403);
-        }
-
-        $usuario = Auth::user();
-
-        $nuevoMensaje = MensajePedido::create([
-            'ID_pedido'    => $id_pedido,
-            'ID_usuario'   => $usuario->ID_usuario,
-            'mensaje'      => $request->mensaje,
-            'archivo_path' => null,
-            'tipo'         => 'texto',
-            'es_de_tienda' => true,
-            'leido'        => false
-        ]);
-
+    // Debe existir al menos texto o imagen
+    if (!$request->mensaje && !$request->hasFile('archivo')) {
         return response()->json([
-            'status'  => 'success',
-            'data'    => $nuevoMensaje
-        ], 201);
+            'status' => 'error',
+            'message' => 'Debes enviar un mensaje o una imagen.'
+        ], 422);
     }
+
+    $pedido = Pedido::find($id_pedido);
+
+    // Bloquear si el chat ya está cerrado
+    if (in_array($pedido->estado, ['entregado', 'finalizado', 'cancelado'])) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Chat finalizado. No puedes enviar más mensajes.'
+        ], 403);
+    }
+
+    $usuario = Auth::user();
+
+    $path = null;
+    $tipo = 'texto';
+
+    // Si viene imagen
+    if ($request->hasFile('archivo')) {
+
+        $path = $request->file('archivo')
+            ->store('chat_vendedor', 'public');
+
+        $tipo = 'imagen';
+    }
+
+    $nuevoMensaje = MensajePedido::create([
+        'ID_pedido'    => $id_pedido,
+        'ID_usuario'   => $usuario->ID_usuario,
+        'mensaje'      => $request->mensaje,
+        'archivo_path' => $path,
+        'tipo'         => $tipo,
+        'es_de_tienda' => true,
+        'leido'        => false
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'data'   => $nuevoMensaje
+    ], 201);
+}
 }

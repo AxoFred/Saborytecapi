@@ -135,4 +135,24 @@ class HorarioController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    public function estaAbierta(int $id_tienda)
+    {
+    // 1. Obtener día en español según la configuración de tu aplicación (config/app.php 'locale')
+    // Carbon es la librería que Laravel usa por defecto
+    $diaEspanol = \Carbon\Carbon::now()->translatedFormat('l'); 
+
+    // 2. Obtener hora actual del sistema
+    $ahora = now()->format('H:i:s');
+
+    // 3. Consultar
+    $estaAbierto = Horario::where('ID_tienda', $id_tienda)
+        ->where('dia_semana', $diaEspanol)
+        ->where('estado', 'activo')
+        ->where('hora_apertura', '<=', $ahora)
+        ->where('hora_cierre', '>=', $ahora)
+        ->exists();
+
+    return response()->json(['abierto' => $estaAbierto]);
+    }
 }

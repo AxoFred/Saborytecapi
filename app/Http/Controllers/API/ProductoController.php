@@ -27,6 +27,11 @@ class ProductoController extends Controller
                 ->leftJoin('categorias', 'productos.ID_categoria', '=', 'categorias.ID_categoria')
                 ->leftJoin('tiendas', 'productos.ID_tienda', '=', 'tiendas.ID_tienda')
                 ->where('tiendas.ID_usuario_vendedor', $userId) 
+                ->where(function($query) {
+                    $query->where('productos.visible', '!=', 0)          // 1. Mostrar los aprobados/activos
+                          ->orWhere('productos.estado', '=', 'pendiente') // 2. Mostrar los que están en revisión
+                          ->orWhere('productos.estado', '=', 'rechazado'); // 3. Mostrar los que fueron rechazados
+                })
                 
                 ->select(
                     'productos.*',
@@ -117,7 +122,7 @@ class ProductoController extends Controller
             }
 
             $data = [];
-            $campos = ['nombre', 'marca', 'descripcion', 'precio', 'ID_categoria', 'ID_tienda', 'disponible'];
+            $campos = ['nombre', 'marca', 'descripcion', 'precio', 'ID_categoria', 'ID_tienda', 'disponible', 'visible'];
 
             foreach ($campos as $campo) {
                 if ($request->has($campo)) {

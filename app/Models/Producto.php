@@ -15,6 +15,7 @@ class Producto extends Model
         'imagen',
         'estado',
         'disponible',
+        'visible',
         'ID_categoria',
         'ID_tienda'
     ];

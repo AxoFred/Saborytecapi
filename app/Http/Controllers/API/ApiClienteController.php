@@ -95,7 +95,6 @@ class ApiClienteController extends Controller
                 ->join('categorias', 'productos.ID_categoria', '=', 'categorias.ID_categoria')
                 ->where('productos.estado', '!=', 'pendiente')
                 ->where('productos.visible', '=', 1)
-                ->where('productos.disponible', '=', 1)
                 ->whereIn('tiendas.aprobacion', ['aprobado', 'aprobada', 'Aprobado', 'Aprobada']);
 
             // Filtros Dinámicos
@@ -118,9 +117,13 @@ class ApiClienteController extends Controller
                 $query->where('productos.precio', '<=', (float) $request->precio_max);
             }
 
-            // Filtro por Disponibilidad
-            if ($request->has('disponible') && $request->disponible !== null && $request->disponible !== '') {
+            // Filtro por Disponibilidad AJUSTADO:
+            // Si el usuario elige un valor (1 o 0), lo aplicamos.
+            // Si el valor está vacío, por defecto mostramos solo los disponibles (1).
+            if ($request->has('disponible') && $request->disponible !== '' && $request->disponible !== null) {
                 $query->where('productos.disponible', (int) $request->disponible);
+            } else {
+                $query->where('productos.disponible', 1);
             }
 
             $productos = $query->select(
@@ -130,6 +133,7 @@ class ApiClienteController extends Controller
                 'productos.precio',
                 'productos.imagen',
                 'productos.descripcion',
+                'productos.disponible',
                 'categorias.nombre as nombre_categoria',
                 'tiendas.nombre as nombre_tienda'
             )

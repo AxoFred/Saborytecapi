@@ -76,7 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pedidos/mensajes', [ChatController::class, 'store']);
         //calificaciones(group cliente)
         Route::post('/calificaciones', [CalificacionController::class, 'store']);
-         //calificaciones(group cliente)
+         //calificaciones( actualizar  cliente)
         Route::put('/calificaciones/{id_pedido}', [CalificacionController::class, 'update']);
     });
 
@@ -110,11 +110,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/estado', [VendedorPedidoController::class, 'updateEstado']);     // Cambiar a 'preparación', etc.
         Route::post('/{id}/cancelar', [VendedorPedidoController::class, 'cancelar']);   
             // Cancelar con motivo
-        Route::post('/{id}/mensajes', [ChatController::class, 'storeVendedor']);
+        Route::post('/{id}/mensajes', [ChatController::class, 'storeVendedor']);//chats vendedor
        
     });
 
-     Route::get('/chat/{id_pedido}', [ChatController::class, 'index']);
+     Route::get('/chat/{id_pedido}', [ChatController::class, 'index']);// Rutas para obtener mensajes del chat de un pedido específico
 
     // --- ADMINISTRACIÓN DE PRODUCTOS (APROBACIONES) ---
     Route::prefix('admin/productos')->group(function () {
@@ -123,11 +123,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('{id}/rechazar', [ProductoAprobacionController::class, 'rechazar']);
     });
 
-    // Rutas para Horarios
+    // Rutas para Horarios de vendedores
     Route::get('horarios/vendedor/mis-horarios', [HorarioController::class, 'index']);
     Route::put('horarios/{id}', [HorarioController::class, 'update']);
     Route::post('horarios', [HorarioController::class, 'store']);
     Route::delete('horarios/{id}', [HorarioController::class, 'destroy']);
+
+    // Ruta para verificar si una tienda está abierta
+    Route::get('tiendas/{id}/esta-abierta', [HorarioController::class, 'estaAbierta']);
 
     // Reportes Saborytec 
     Route::get('reportes/vendedor', [ReporteController::class, 'reporteVendedor']);

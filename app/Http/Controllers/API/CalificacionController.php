@@ -110,10 +110,13 @@ public function update(Request $request,int $id_pedido)
 }
     public function index(int $id_tienda)
     {
-        $calificaciones = Calificacion::with('usuario:ID_usuario,nombre')
-            ->where('ID_tienda', $id_tienda)
-            ->orderBy('ID_calificacion', 'desc')
-            ->get();
+        $calificaciones = Calificacion::with([
+            'usuario:ID_usuario,nombre',
+            'pedido.detalles.producto'
+        ])
+        ->where('ID_tienda', $id_tienda)
+        ->orderBy('ID_calificacion', 'desc')
+        ->get();
 
         return response()->json([
             'status' => 'success',
