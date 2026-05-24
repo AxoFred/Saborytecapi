@@ -35,10 +35,11 @@ Route::get('/crear-enlace-storage', function () {
 /******************************************************************
  *                        RUTAS PÚBLICAS                          *
  ******************************************************************/
+Route::middleware('throttle:60,1')
+    ->get('/weather', [WeatherController::class, 'index']);
 
 // Única puerta de entrada: Login
 Route::post('login', [AuthController::class, 'login'])->name('login');
-
 
 /******************************************************************
  *                       RUTAS PROTEGIDAS                         *
@@ -140,5 +141,5 @@ Route::middleware('auth:sanctum')->group(function () {
     //calificaciones
     Route::get('/tienda/{id}/calificaciones', [CalificacionController::class, 'index']);
 
-    Route::get('/weather', [WeatherController::class, 'index']);
+    
 });
