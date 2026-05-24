@@ -36,15 +36,34 @@ class WeatherController extends Controller
 
             $data = $response->json();
 
+            // Obtener temperatura
+            $temp = $data['current']['temp_c'];
+
+            // Recomendaciones automáticas
+            if ($temp >= 28) {
+
+                $recommendation = "🥤 Recomendamos bebidas frías";
+
+            } elseif ($temp <= 18) {
+
+                $recommendation = "☕ Recomendamos café caliente";
+
+            } else {
+
+                $recommendation = "🍔 Ideal para cualquier comida";
+
+            }
+
             return response()->json([
                 'success' => true,
                 'city' => $data['location']['name'],
                 'country' => $data['location']['country'],
-                'temperature' => $data['current']['temp_c'],
+                'temperature' => $temp,
                 'condition' => $data['current']['condition']['text'],
                 'icon' => 'https:' . $data['current']['condition']['icon'],
                 'humidity' => $data['current']['humidity'],
-                'chance_of_rain' => $data['current']['chance_of_rain']
+                'chance_of_rain' => $data['current']['chance_of_rain'],
+                'recommendation' => $recommendation
             ]);
 
         } catch (\Exception $e) {
