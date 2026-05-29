@@ -16,6 +16,7 @@ use App\Http\Controllers\API\ReporteController;
 use App\Http\Controllers\API\ReporteAdminController;
 use App\Http\Controllers\API\CalificacionController;
 use App\Http\Controllers\API\WeatherController;
+use App\Http\Controllers\API\ChatbotController;
 /*
 |--------------------------------------------------------------------------
 | API Routes - Saborytec (Versión Protegida Universitaria)
@@ -53,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- RUTAS PARA CLIENTES (ESTUDIANTES, DOCENTES) ---
     // Estas rutas permiten que el cliente vea el catálogo una vez logueado
     Route::prefix('cliente')->group(function () {
+        // CHATBOT IA
+        Route::post('/chatbot', [ChatbotController::class, 'chat']);
+
         Route::get('tiendas', [ApiClienteController::class, 'getTiendas']);
         Route::get('productos/destacados', [ApiClienteController::class, 'getProductosDestacados']);
         Route::get('/explorar', [ApiClienteController::class, 'explorar']);
