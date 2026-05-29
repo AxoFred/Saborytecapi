@@ -12,7 +12,7 @@ class ChatbotController extends Controller
 {
     public function chat(Request $request)
     {
-        $pregunta = strtolower($request->pregunta);
+        $pregunta = mb_strtolower($request->pregunta, 'UTF-8');
 
         $contexto = "";
 
@@ -21,7 +21,10 @@ class ChatbotController extends Controller
         | PRODUCTO MÁS VENDIDO
         |--------------------------------------------------------------------------
         */
-        if (str_contains($pregunta, 'más vendido')) {
+        if (
+            str_contains($pregunta, 'más vendido') ||
+            str_contains($pregunta, 'mas vendido')
+        ) {
 
             $producto = DetallePedido::selectRaw('ID_producto, SUM(cantidad) as total_vendidos')
                 ->groupBy('ID_producto')
@@ -40,7 +43,10 @@ class ChatbotController extends Controller
         | BEBIDA RECOMENDADA
         |--------------------------------------------------------------------------
         */
-        elseif (str_contains($pregunta, 'bebida')) {
+        elseif (
+            str_contains($pregunta, 'bebida') ||
+            str_contains($pregunta, 'recomiendas')
+        ) {
 
             $bebida = Producto::where('nombre', 'like', '%boing%')
                 ->orWhere('nombre', 'like', '%coca%')
@@ -59,7 +65,9 @@ class ChatbotController extends Controller
         | VER CARRITO
         |--------------------------------------------------------------------------
         */
-        elseif (str_contains($pregunta, 'carrito')) {
+        elseif (
+            str_contains($pregunta, 'carrito')
+        ) {
 
             $contexto =
                 "Puedes ver tu carrito presionando el ícono del carrito en la parte superior de la aplicación.";
@@ -70,7 +78,9 @@ class ChatbotController extends Controller
         | REALIZAR PEDIDO
         |--------------------------------------------------------------------------
         */
-        elseif (str_contains($pregunta, 'pedido')) {
+        elseif (
+            str_contains($pregunta, 'pedido')
+        ) {
 
             $contexto =
                 "Para realizar un pedido debes seleccionar productos, agregarlos al carrito y confirmar tu compra.";
@@ -137,10 +147,28 @@ class ChatbotController extends Controller
             ]
         ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDAR RESPUESTA DE GROQ
+        |--------------------------------------------------------------------------
+        */
+        if (!$response->successful()) {
+
+            return response()->json([
+                'success' => false,
+                'error' => $response->json()
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESPUESTA FINAL
+        |--------------------------------------------------------------------------
+        */
         return response()->json([
             'success' => true,
             'respuesta' =>
-                $response['choices'][0]['message']['content']
+                $response->json()['choices'][0]['message']['content']
         ]);
     }
 }
