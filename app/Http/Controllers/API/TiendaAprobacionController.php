@@ -22,6 +22,32 @@ class TiendaAprobacionController extends Controller
     }
 
     /**
+     * Obtener tiendas aprobadas históricas.
+     */
+    public function aprobadas()
+    {
+        // Traemos las aprobadas (puedes quitar el 'visible' si un admin debe verlas de todos modos)
+        $tiendas = Tienda::where('aprobacion', 'aprobada')
+            ->where('visible', 1)
+            ->get();
+
+        return response()->json($tiendas, 200);
+    }
+
+    /**
+     * Obtener tiendas rechazadas históricas.
+     */
+    public function rechazadas()
+    {
+        // Traemos las rechazadas
+        $tiendas = Tienda::where('aprobacion', 'rechazada')
+            ->where('visible', 1) 
+            ->get();
+
+        return response()->json($tiendas, 200);
+    }
+    
+    /**
      * Aprobar una tienda específica.
      */
     public function aprobar($id)

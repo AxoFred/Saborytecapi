@@ -98,6 +98,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- ADMINISTRACIÓN DE TIENDAS (APROBACIONES) ---
     Route::prefix('admin/tiendas')->group(function () {
         Route::get('pendientes', [TiendaAprobacionController::class, 'pendientes']);
+        Route::get('aprobadas', [TiendaAprobacionController::class, 'aprobadas']);   
+        Route::get('rechazadas', [TiendaAprobacionController::class, 'rechazadas']); 
+        
         Route::post('{id}/aprobar', [TiendaAprobacionController::class, 'aprobar']);
         Route::post('{id}/rechazar', [TiendaAprobacionController::class, 'rechazar']);
     });
