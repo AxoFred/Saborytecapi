@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- GESTIÓN DE TIENDAS (VENDEDOR / ADMIN) ---
     // Mantenemos tu apiResource original para el CRUD
     Route::apiResource('tiendas', TiendaController::class);
+    Route::post('tiendas/toggle-estado', [TiendaController::class, 'toggleEstado']);
     
     // --- ADMINISTRACIÓN DE TIENDAS (APROBACIONES) ---
     Route::prefix('admin/tiendas')->group(function () {

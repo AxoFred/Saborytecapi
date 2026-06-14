@@ -104,6 +104,47 @@ class TiendaController extends Controller
     }
 
     /**
+     * Alterna la visibilidad rápida (Abierto/Cerrado) de la tienda sin alterar la aprobación del admin.
+     * Corresponde a: POST /api/tiendas/toggle-estado
+     */
+    public function toggleEstado(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            $request->validate([
+                'estado' => 'required|string|in:activo,inactivo',
+            ]);
+
+            // Buscamos la tienda del vendedor autenticado
+            $tienda = Tienda::where('ID_usuario_vendedor', $user->ID_usuario)->first();
+
+            if (!$tienda) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No tienes ninguna tienda registrada todavía.'
+                ], 444);
+            }
+
+            // Actualizamos ÚNICAMENTE el estado sin tocar la columna de aprobación
+            $tienda->update([
+                'estado' => $request->estado
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'El estado de la tienda se actualizó instantáneamente.',
+                'data' => $tienda
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Error al cambiar el estado: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Corresponde a: DELETE /api/tiendas/{id}
      */
     public function destroy($id)
